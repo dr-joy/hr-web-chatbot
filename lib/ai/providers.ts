@@ -11,6 +11,16 @@ import {
   reasoningModel,
   titleModel,
 } from './models.test';
+import { createModelProvider } from './model-config';
+
+const modelConfig = {
+  provider: (process.env.MODEL_PROVIDER as 'openai' | 'ollama') || 'ollama',
+  openaiApiKey: process.env.OPENAI_API_KEY,
+  ollamaBaseUrl: process.env.OLLAMA_BASE_URL,
+  ollamaModel: process.env.OLLAMA_MODEL,
+};
+
+const modelProvider = createModelProvider(modelConfig);
 
 export const myProvider = isTestEnvironment
   ? customProvider({
@@ -22,16 +32,13 @@ export const myProvider = isTestEnvironment
       },
     })
   : customProvider({
-      languageModels: {
-        'chat-model': xai('grok-2-vision-1212'),
-        'chat-model-reasoning': wrapLanguageModel({
-          model: xai('grok-3-mini-beta'),
-          middleware: extractReasoningMiddleware({ tagName: 'think' }),
-        }),
-        'title-model': xai('grok-2-1212'),
-        'artifact-model': xai('grok-2-1212'),
-      },
-      imageModels: {
-        'small-model': xai.image('grok-2-image'),
-      },
-    });
+    languageModels: {
+      'chat-model': modelProvider,
+      'chat-model-reasoning': wrapLanguageModel({
+        model: modelProvider,
+        middleware: extractReasoningMiddleware({ tagName: 'think' }),
+      }),
+      'title-model': modelProvider,
+      'artifact-model': modelProvider,
+    },
+  });
