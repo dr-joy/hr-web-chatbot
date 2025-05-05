@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { throttle } from './throttle';
 import { useStableValue } from './util/use-stable-value';
+import { callCustomApi } from '@/lib/ai/custom-api';
 
 export type { CreateMessage, Message, UseChatOptions };
 
@@ -241,11 +242,7 @@ By default, it's set to 1, which means that only a single LLM call is made.
       setError(undefined);
 
       const chatMessages = fillMessageParts(chatRequest.messages);
-
-      const messageCount = chatMessages.length;
-      const maxStep = extractMaxToolInvocationStep(
-        chatMessages[chatMessages.length - 1]?.toolInvocations,
-      );
+      const lastMessage = chatMessages[chatMessages.length - 1];
 
       try {
         const abortController = new AbortController();
@@ -261,89 +258,56 @@ By default, it's set to 1, which means that only a single LLM call is made.
         const previousMessages = messagesRef.current;
         throttledMutate(chatMessages, false);
 
-        const constructedMessagesPayload = sendExtraMessageFields
-          ? chatMessages
-          : chatMessages.map(
-              ({
-                role,
-                content,
-                experimental_attachments,
-                data,
-                annotations,
-                toolInvocations,
-                parts,
-              }) => ({
-                role,
-                content,
-                ...(experimental_attachments !== undefined && {
-                  experimental_attachments,
-                }),
-                ...(data !== undefined && { data }),
-                ...(annotations !== undefined && { annotations }),
-                ...(toolInvocations !== undefined && { toolInvocations }),
-                ...(parts !== undefined && { parts }),
-              }),
-            );
+        // Create initial assistant message
+        const assistantMessage: UIMessage = {
+          id: generateId(),
+          role: 'assistant',
+          content: '',
+          createdAt: new Date(),
+          parts: [{ type: 'text', text: '' }],
+        };
 
-        const existingData = streamDataRef.current;
+        // Add initial empty assistant message
+        throttledMutate(
+          [...chatMessages, assistantMessage],
+          false,
+        );
 
-        await callChatApi({
-          api,
-          body: experimental_prepareRequestBody?.({
-            id: chatId,
-            messages: chatMessages,
-            requestData: chatRequest.data,
-            requestBody: chatRequest.body,
-          }) ?? {
-            id: chatId,
-            messages: constructedMessagesPayload,
-            data: chatRequest.data,
-            ...extraMetadataRef.current.body,
-            ...chatRequest.body,
-          },
-          streamProtocol,
-          credentials: extraMetadataRef.current.credentials,
-          headers: {
-            ...extraMetadataRef.current.headers,
-            ...chatRequest.headers,
-          },
-          abortController: () => abortControllerRef.current,
-          restoreMessagesOnFailure() {
-            if (!keepLastMessageOnError) {
-              throttledMutate(previousMessages, false);
-            }
-          },
-          onResponse,
-          onUpdate({ message, data, replaceLastMessage }) {
-            mutateStatus('streaming');
+        mutateStatus('streaming');
 
-            throttledMutate(
-              [
-                ...(replaceLastMessage
-                  ? chatMessages.slice(0, chatMessages.length - 1)
-                  : chatMessages),
-                message,
-              ],
-              false,
-            );
+        // Call custom API and handle streaming
+        const stream = await callCustomApi(lastMessage.content);
+        const reader = stream.getReader();
+        let fullText = '';
 
-            if (data?.length) {
-              throttledMutateStreamData(
-                [...(existingData ?? []), ...data],
-                false,
-              );
-            }
-          },
-          onToolCall,
-          onFinish,
-          generateId,
-          fetch,
-          lastMessage: chatMessages[chatMessages.length - 1],
-        });
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        abortControllerRef.current = null;
+          fullText += value;
+
+          // Update the assistant message with the new text
+          const updatedMessage: UIMessage = {
+            ...assistantMessage,
+            content: fullText,
+            parts: [{ type: 'text', text: fullText }],
+          };
+
+          throttledMutate(
+            [...chatMessages, updatedMessage],
+            false,
+          );
+        }
 
         mutateStatus('ready');
+        onFinish?.(assistantMessage, {
+          usage: {
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+          },
+          finishReason: 'stop',
+        });
       } catch (err) {
         // Ignore abort errors as they are expected.
         if ((err as any).name === 'AbortError') {
@@ -359,33 +323,15 @@ By default, it's set to 1, which means that only a single LLM call is made.
         setError(err as Error);
         mutateStatus('error');
       }
-
-      // auto-submit when all tool calls in the last assistant message have results
-      // and assistant has not answered yet
-      const messages = messagesRef.current;
-      if (
-        shouldResubmitMessages({
-          originalMaxToolInvocationStep: maxStep,
-          originalMessageCount: messageCount,
-          maxSteps,
-          messages,
-        })
-      ) {
-        await triggerRequest({ messages });
-      }
     },
     [
       mutate,
       mutateStatus,
-      api,
-      extraMetadataRef,
       onResponse,
       onFinish,
       onError,
       setError,
       mutateStreamData,
-      streamDataRef,
-      streamProtocol,
       sendExtraMessageFields,
       experimental_prepareRequestBody,
       onToolCall,
