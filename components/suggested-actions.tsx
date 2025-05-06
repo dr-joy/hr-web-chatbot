@@ -29,7 +29,7 @@ function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
     },
     {
       title: 'Chi phí hỗ trợ sinh đẻ',
-      label: 'Liên quan đến bảo hiển PVI',
+      label: 'Liên quan đến bảo hiểm PVI',
       action: 'Chi phí hỗ trợ sinh đẻ tại Dr.JOY?',
     },
   ];
