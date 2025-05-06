@@ -13,24 +13,24 @@ interface SuggestedActionsProps {
 function PureSuggestedActions({ chatId, append }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'What are the advantages',
-      label: 'of using Next.js?',
-      action: 'What are the advantages of using Next.js?',
+      title: 'Chế độ nghỉ lễ, tết',
+      label: '',
+      action: 'Chế độ nghỉ lễ, tết tại Dr.JOY?',
     },
     {
-      title: 'Write code to',
-      label: `demonstrate djikstra's algorithm`,
-      action: `Write code to demonstrate djikstra's algorithm`,
+      title: 'Nghỉ thai sản tại công ty',
+      label: '',
+      action: `Nghỉ thai sản tại công ty tại Dr.JOY?`,
     },
     {
-      title: 'Help me write an essay',
-      label: `about silicon valley`,
-      action: `Help me write an essay about silicon valley`,
+      title: 'Bảo vệ bí mật kinh doanh',
+      label: 'Bí mật công nghệ của Công ty',
+      action: `Bảo vệ bí mật kinh doanh, bí mật công nghệ của Công ty tại Dr.JOY?`,
     },
     {
-      title: 'What is the weather',
-      label: 'in San Francisco?',
-      action: 'What is the weather in San Francisco?',
+      title: 'Chi phí hỗ trợ sinh đẻ',
+      label: 'Liên quan đến bảo hiển PVI',
+      action: 'Chi phí hỗ trợ sinh đẻ tại Dr.JOY?',
     },
   ];
 

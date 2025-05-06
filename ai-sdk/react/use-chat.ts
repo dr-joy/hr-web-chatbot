@@ -324,26 +324,7 @@ By default, it's set to 1, which means that only a single LLM call is made.
         mutateStatus('error');
       }
     },
-    [
-      mutate,
-      mutateStatus,
-      onResponse,
-      onFinish,
-      onError,
-      setError,
-      mutateStreamData,
-      sendExtraMessageFields,
-      experimental_prepareRequestBody,
-      onToolCall,
-      maxSteps,
-      messagesRef,
-      abortControllerRef,
-      generateId,
-      fetch,
-      keepLastMessageOnError,
-      throttleWaitMs,
-      chatId,
-    ],
+    [mutate, mutateStatus, onFinish, onError, setError, mutateStreamData, messagesRef, abortControllerRef, generateId, throttleWaitMs],
   );
 
   const append = useCallback(
