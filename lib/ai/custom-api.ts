@@ -1,7 +1,7 @@
 import { streamText } from 'ai';
 
 export async function callCustomApi(prompt: string) {
-  const response = await fetch('http://localhost:8001/query', {
+  const response = await fetch('http://192.168.4.24:8001/query', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
