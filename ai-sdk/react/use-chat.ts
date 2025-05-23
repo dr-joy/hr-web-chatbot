@@ -275,29 +275,22 @@ By default, it's set to 1, which means that only a single LLM call is made.
 
         mutateStatus('streaming');
 
-        // Call custom API and handle streaming
-        const stream = await callCustomApi(lastMessage.content);
-        const reader = stream.getReader();
-        let fullText = '';
+        // Call custom API and handle non-streaming response
+        const apiResponse = await callCustomApi(lastMessage.content);
+        // If the API returns a field like 'text', adjust accordingly
+        const fullText = apiResponse.output;
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        // Update the assistant message with the new text
+        const updatedMessage: UIMessage = {
+          ...assistantMessage,
+          content: fullText,
+          parts: [{ type: 'text', text: fullText }],
+        };
 
-          fullText += value;
-
-          // Update the assistant message with the new text
-          const updatedMessage: UIMessage = {
-            ...assistantMessage,
-            content: fullText,
-            parts: [{ type: 'text', text: fullText }],
-          };
-
-          throttledMutate(
-            [...chatMessages, updatedMessage],
-            false,
-          );
-        }
+        throttledMutate(
+          [...chatMessages, updatedMessage],
+          false,
+        );
 
         mutateStatus('ready');
         onFinish?.(assistantMessage, {

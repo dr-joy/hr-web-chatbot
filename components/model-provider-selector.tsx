@@ -15,7 +15,7 @@ import type { ModelProvider } from '@/lib/ai/model-config';
 const providers = [
   {
     id: 'openai',
-    name: 'OpenAI',
+    name: 'Template',
     description: 'Use OpenAI models (GPT-4)',
   },
   {
@@ -37,7 +37,7 @@ export function ModelProviderSelector({
 
   const selectedProviderInfo = useMemo(
     () => providers.find((provider) => provider.id === optimisticProvider),
-    [optimisticProvider],
+    [optimisticProvider]
   );
 
   const saveProvider = async (provider: ModelProvider) => {
@@ -61,7 +61,7 @@ export function ModelProviderSelector({
         asChild
         className={cn(
           'w-fit data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
-          className,
+          className
         )}
       >
         <Button
@@ -113,4 +113,4 @@ export function ModelProviderSelector({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-} 
+}
